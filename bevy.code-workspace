@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "../bevy"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../rust/colorpick-rs"
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"Elaina",
+			"Renzo",
+			"Srgb",
+			"Unorm",
+			"Zayna"
+		]
+	}
+}
