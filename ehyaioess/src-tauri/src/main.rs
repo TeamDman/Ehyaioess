@@ -34,6 +34,8 @@ lazy_static::lazy_static! {
     );
 }
 
+
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[derive(Debug, Serialize, Deserialize)]
 struct ConversationModel {
@@ -74,6 +76,22 @@ fn new_conversation() -> Result<ConversationModel, ()> {
     Ok(model)
 }
 
+#[tauri::command(rename_all="snake_case")]
+fn rename_conversation(app_handle: tauri::AppHandle, id: &str, new_title: &str) -> Result<(),()> {
+    println!("rename_conversation");
+    let mut state = STATE.write().unwrap();
+    let id = match uuid::Uuid::parse_str(id) {
+        Ok(id) => id,
+        Err(_) => return Err(()),
+    };
+    let conv = match state.conversations.get_mut(&id) {
+        Some(conv) => conv,
+        None => return Err(()),
+    };
+    conv.title = new_title.to_string();
+    Ok(())
+}
+
 #[tauri::command]
 async fn greet(name: &str) -> Result<String, String> {
     // Clone the Arc to get a new reference to the config
@@ -97,7 +115,14 @@ async fn greet(name: &str) -> Result<String, String> {
 fn main() {
     // println!("{:#?}", *CONFIG);
     tauri::Builder::default()
+        .manage(state)
         .invoke_handler(tauri::generate_handler![greet, list_conversations, new_conversation])
+        .setup(|app| {
+            std::thread::spawn(move || {
+
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
