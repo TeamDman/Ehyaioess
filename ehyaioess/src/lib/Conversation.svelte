@@ -42,16 +42,16 @@
             {$viewConversation.title}
         </button>
     {:else}
-        <form>
+        <form on:submit|preventDefault={()=>editingTitle=false}>
             <label for="title">Title</label>
             <input id="title"
                 use:init
                 type="text"
                 class="text-black"
                 bind:value={editingTitleValue}
-                on:blur={() => setTimeout(() => (editingTitle = false), 1000)}
+                on:blur={() => editingTitle = false}
             />
-            <button class="hidden" type="submit">Save</button>
+            <button class="invisible" type="submit">Save</button>
         </form>
     {/if}
     <p>Conversation</p>
