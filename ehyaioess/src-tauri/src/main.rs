@@ -4,6 +4,7 @@
 mod config;
 use chatgpt::{client::ChatGPT, types::ChatMessage};
 use config::Config;
+use serde::{Serialize, Deserialize};
 use std::{collections::HashMap, sync::{Arc, RwLock}};
 mod stuff;
 
@@ -34,13 +35,15 @@ lazy_static::lazy_static! {
 }
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+#[derive(Debug, Serialize, Deserialize)]
 struct ConversationModel {
     id: uuid::Uuid,
     title: String,
     history: Vec<ChatMessage>,
 }
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn list_conversations() -> Result<HashMap<uuid::Uuid, ConversationModel>, String> {
+    println!("list_conversations");
     let state = STATE.read().unwrap();
     Ok(state
         .conversations
@@ -58,8 +61,9 @@ async fn list_conversations() -> Result<HashMap<uuid::Uuid, ConversationModel>, 
         .collect())
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 fn new_conversation() -> Result<ConversationModel, ()> {
+    println!("new_conversation");
     let mut state = STATE.write().unwrap();
     let conv = state.new_conversation();
     let model = ConversationModel {
@@ -93,7 +97,7 @@ async fn greet(name: &str) -> Result<String, String> {
 fn main() {
     // println!("{:#?}", *CONFIG);
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet, list_conversations, new_conversation])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
