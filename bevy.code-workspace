@@ -8,6 +8,15 @@
 		},
 		{
 			"path": "../../rust/colorpick-rs"
+		},
+		{
+			"path": "../Vulkano"
+		},
+		{
+			"path": "../tch-rs"
+		},
+		{
+			"path": "../rust-individual-project-3"
 		}
 	],
 	"settings": {
@@ -16,7 +25,9 @@
 			"Renzo",
 			"Srgb",
 			"Unorm",
+			"Winit",
 			"Zayna"
-		]
+		],
+		"powershell.cwd": "d:\\Repos\\rust\\tch-rs"
 	}
 }
