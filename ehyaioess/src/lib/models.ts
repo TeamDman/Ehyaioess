@@ -2,7 +2,8 @@ export interface ConversationModel {
     id: string;
     title: string;
     history: {
-        role: string;
+        id: string;
+        author: string;
         content: string;
     }[];
 }

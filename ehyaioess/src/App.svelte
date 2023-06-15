@@ -1,19 +1,18 @@
 <script lang="ts">
   import Conversation from "./lib/Conversation.svelte";
-  import ConversationHistory from "./lib/ConversationHistory.svelte";
+  import ConversationList from "./lib/ConversationList.svelte";
+    import NoConversationPlaceholder from "./lib/NoConversationPlaceholder.svelte";
   import { viewConversation } from "./lib/state";
 
 </script>
 
-<main class="flex">
-  <div id="left-panel" class="w-40 h-full min-h-screen bg-slate-800">
-    <ConversationHistory />
-  </div>
-  <div id="main-panel" class="flex-grow">
+<main class="flex h-screen overflow-hidden">
+  <ConversationList />
+  <div id="main-panel" class="flex-grow h-full overflow-auto">
     {#if $viewConversation != null}
       <Conversation/>
     {:else}
-      <p>no conversation selected</p>
+      <NoConversationPlaceholder/>
     {/if}
   </div>
 </main>

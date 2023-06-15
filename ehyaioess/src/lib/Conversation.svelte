@@ -7,6 +7,7 @@
     let currentTitle = $viewConversation.title;
     let editingTitleValue = currentTitle;
     let unsub = viewConversation.subscribe((newConversation) => {
+        if (newConversation === null) return;
         editingTitleValue = newConversation.title;
         currentTitle = newConversation.title;
     });
@@ -54,5 +55,12 @@
             <button class="invisible" type="submit">Save</button>
         </form>
     {/if}
-    <p>Conversation</p>
+
+    <div>
+        <ul>
+            {#each $viewConversation.history as message}
+                <li>{message.author} - {message.content}</li>
+            {/each}
+        </ul>
+    </div>
 </div>
