@@ -11,6 +11,12 @@
     "version": "0.0.0"
   },
   "tauri": {
+    "pattern": {
+      "use": "isolation",
+      "options": {
+        "dir": "../dist-isolation"
+      }
+    },
     "allowlist": {
       "all": false,
       "shell": {
@@ -31,7 +37,7 @@
       ]
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'"
     },
     "windows": [
       {
