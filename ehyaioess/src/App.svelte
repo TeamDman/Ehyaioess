@@ -10,7 +10,7 @@
   </div>
   <div id="main-panel" class="flex-grow">
     {#if $viewConversation != null}
-      <Conversation conversation={$viewConversation} />
+      <Conversation/>
     {:else}
       <p>no conversation selected</p>
     {/if}

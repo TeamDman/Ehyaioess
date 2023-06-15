@@ -1,23 +1,34 @@
 <script lang="ts">
-    import type { ConversationModel } from "./models";
-    import { emit } from "@tauri-apps/api/event";
-    export let conversation: ConversationModel;
+    import { invoke } from "@tauri-apps/api/tauri";
+    import { viewConversation } from "./state";
+    import { onDestroy } from "svelte";
 
     let editingTitle = false;
-    let editingTitleValue = conversation.title;
+    let currentTitle = $viewConversation.title;
+    let editingTitleValue = currentTitle;
+    let unsub = viewConversation.subscribe((newConversation) => {
+        editingTitleValue = newConversation.title;
+        currentTitle = newConversation.title;
+    });
+    onDestroy(() => unsub());
 
     function init(el) {
         el.focus();
     }
 
-    function changeTitle(newTitle: string) {
-        console.log(`Changing title for ${conversation.id} to ${newTitle}`);
-        emit("change_conversation_title", {
-            id: conversation.id,
-            newTitle,
+    async function commitTitleChange(id: string, newTitle: string) {
+        if (newTitle === $viewConversation.title) {
+            return;
+        }
+
+        console.log(`Changing title for ${id} to ${newTitle}`);
+        await invoke("set_conversation_title", {
+            id,
+            new_title: newTitle,
         });
-        editingTitle = false;
     }
+
+    $: commitTitleChange($viewConversation.id, editingTitleValue);
 </script>
 
 <div
@@ -28,18 +39,19 @@
             class="hover:bg-gradient-to-r from-indigo-500"
             on:click={() => (editingTitle = true)}
         >
-            {conversation.title}
+            {$viewConversation.title}
         </button>
     {:else}
-        <form on:submit|preventDefault={() => changeTitle(editingTitleValue)}>
-            <input
+        <form>
+            <label for="title">Title</label>
+            <input id="title"
                 use:init
                 type="text"
                 class="text-black"
                 bind:value={editingTitleValue}
-                on:blur={() => (editingTitle = false)}
+                on:blur={() => setTimeout(() => (editingTitle = false), 1000)}
             />
-            <button type="submit">Save</button>
+            <button class="hidden" type="submit">Save</button>
         </form>
     {/if}
     <p>Conversation</p>

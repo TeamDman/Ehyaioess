@@ -1,7 +1,7 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/tauri";
     import type { ConversationModel } from "./models";
-    import { viewConversation as viewConversation } from "./state";
+    import { viewConversation } from "./state";
     import { listen } from "@tauri-apps/api/event";
     import { onDestroy, onMount } from "svelte";
 
@@ -27,9 +27,9 @@
         console.log("listening for conversation title changes");
         const unlisten = await listen(
             "conversation_title_changed",
-            (event: { payload: { id: string; newTitle: string } }) => {
+            (event: { payload: { id: string; new_title: string } }) => {
                 console.log("Conversation title changed", event.payload);
-                conversations[event.payload.id].title = event.payload.newTitle;
+                conversations[event.payload.id].title = event.payload.new_title;
                 conversations = conversations;
             }
         );

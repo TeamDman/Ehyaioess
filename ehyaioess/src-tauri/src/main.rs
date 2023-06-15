@@ -4,8 +4,12 @@
 mod config;
 use chatgpt::{client::ChatGPT, types::ChatMessage};
 use config::Config;
-use serde::{Serialize, Deserialize};
-use std::{collections::HashMap, sync::{Arc, RwLock}};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+use tauri::Manager;
 mod stuff;
 
 // Globally accessible state
@@ -20,7 +24,7 @@ lazy_static::lazy_static! {
             }
         }
     );
-    static ref STATE: RwLock<stuff::State> = 
+    static ref STATE: RwLock<stuff::State> =
         RwLock::new(stuff::State::new(
             Arc::clone(&CONFIG),
             match CONFIG.create_chatgpt_client() {
@@ -33,8 +37,6 @@ lazy_static::lazy_static! {
         )
     );
 }
-
-
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,8 +78,14 @@ fn new_conversation() -> Result<ConversationModel, ()> {
     Ok(model)
 }
 
-#[tauri::command(rename_all="snake_case")]
-fn rename_conversation(app_handle: tauri::AppHandle, id: &str, new_title: &str) -> Result<(),()> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ConversationTitleChangedModel {
+    id: uuid::Uuid,
+    new_title: String,
+}
+
+#[tauri::command(rename_all = "snake_case")]
+fn set_conversation_title(app_handle: tauri::AppHandle, id: &str, new_title: &str) -> Result<(), ()> {
     println!("rename_conversation");
     let mut state = STATE.write().unwrap();
     let id = match uuid::Uuid::parse_str(id) {
@@ -89,6 +97,16 @@ fn rename_conversation(app_handle: tauri::AppHandle, id: &str, new_title: &str) 
         None => return Err(()),
     };
     conv.title = new_title.to_string();
+    match app_handle.emit_all(
+        "conversation_title_changed",
+        ConversationTitleChangedModel {
+            id: conv.id.clone(),
+            new_title: conv.title.clone(),
+        },
+    ) {
+        Ok(_) => (),
+        Err(_) => return Err(()),
+    };
     Ok(())
 }
 
@@ -115,12 +133,14 @@ async fn greet(name: &str) -> Result<String, String> {
 fn main() {
     // println!("{:#?}", *CONFIG);
     tauri::Builder::default()
-        .manage(state)
-        .invoke_handler(tauri::generate_handler![greet, list_conversations, new_conversation])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            list_conversations,
+            new_conversation,
+            set_conversation_title
+        ])
         .setup(|app| {
-            std::thread::spawn(move || {
-
-            });
+            std::thread::spawn(move || {});
             Ok(())
         })
         .run(tauri::generate_context!())
