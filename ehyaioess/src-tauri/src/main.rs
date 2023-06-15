@@ -2,13 +2,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod config;
+use chatgpt::{client::ChatGPT, types::ChatMessage};
 use config::Config;
-use std::sync::Arc;
-use chatgpt::client::ChatGPT;
+use std::{collections::HashMap, sync::{Arc, RwLock}};
+mod stuff;
 
 // Globally accessible state
 lazy_static::lazy_static! {
-    
+
     static ref CONFIG: Arc<Config> = Arc::new(
         match Config::from_file("ehyaioess.conf.secret.json") {
             Ok(conf) => conf,
@@ -18,14 +19,59 @@ lazy_static::lazy_static! {
             }
         }
     );
+    static ref STATE: RwLock<stuff::State> = 
+        RwLock::new(stuff::State::new(
+            Arc::clone(&CONFIG),
+            match CONFIG.create_chatgpt_client() {
+                Ok(client) => client,
+                Err(e) => {
+                    eprintln!("Failed to create ChatGPT client: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        )
+    );
 }
 
-
-
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+struct ConversationModel {
+    id: uuid::Uuid,
+    title: String,
+    history: Vec<ChatMessage>,
+}
+#[tauri::command]
+async fn list_conversations() -> Result<HashMap<uuid::Uuid, ConversationModel>, String> {
+    let state = STATE.read().unwrap();
+    Ok(state
+        .conversations
+        .iter()
+        .map(|(id, conv)| {
+            (
+                id.clone(),
+                ConversationModel {
+                    id: conv.id.clone(),
+                    title: conv.title.clone(),
+                    history: conv.conversation.history.clone(),
+                },
+            )
+        })
+        .collect())
+}
 
 #[tauri::command]
-async fn greet(name: &str) -> Result<String,String> {
+fn new_conversation() -> Result<ConversationModel, ()> {
+    let mut state = STATE.write().unwrap();
+    let conv = state.new_conversation();
+    let model = ConversationModel {
+        id: conv.id.clone(),
+        title: conv.title.clone(),
+        history: conv.conversation.history.clone(),
+    };
+    Ok(model)
+}
+
+#[tauri::command]
+async fn greet(name: &str) -> Result<String, String> {
     // Clone the Arc to get a new reference to the config
     let config = Arc::clone(&CONFIG);
 
@@ -40,10 +86,9 @@ async fn greet(name: &str) -> Result<String,String> {
         Ok(response) => response.message().content.clone(),
         Err(e) => return Err(e.to_string()), // if there's an error sending the message, return it
     };
-    
+
     Ok(response) // if everything is okay, return the content
 }
-
 
 fn main() {
     // println!("{:#?}", *CONFIG);
