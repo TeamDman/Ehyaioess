@@ -1,4 +1,4 @@
-use std::{sync::Arc, collections::HashMap};
+use std::{sync::{Arc, mpsc}, collections::HashMap};
 
 use chatgpt::prelude::ChatGPT;
 use uuid::Uuid;

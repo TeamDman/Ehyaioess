@@ -2,6 +2,8 @@
     import { invoke } from "@tauri-apps/api/tauri";
     import type { ConversationModel } from "./models";
     import { viewConversation as viewConversation } from "./state";
+    import { listen } from "@tauri-apps/api/event";
+    import { onDestroy, onMount } from "svelte";
 
     async function load(): Promise<Record<string, ConversationModel>> {
         console.log("Loading conversations");
@@ -20,6 +22,19 @@
         conversations[resp.id] = resp;
         conversations = conversations;
     }
+    
+    onMount(async () => {
+        console.log("listening for conversation title changes");
+        const unlisten = await listen(
+            "conversation_title_changed",
+            (event: { payload: { id: string; newTitle: string } }) => {
+                console.log("Conversation title changed", event.payload);
+                conversations[event.payload.id].title = event.payload.newTitle;
+                conversations = conversations;
+            }
+        );
+        onDestroy(unlisten);
+    });
 </script>
 
 <div>
@@ -28,8 +43,10 @@
     <ul>
         {#each Object.keys(conversations) as id}
             <li>
-                <button class="hover:bg-slate-500"
-                    on:click|preventDefault={() => viewConversation.set(conversations[id])}
+                <button
+                    class="hover:bg-slate-500"
+                    on:click|preventDefault={() =>
+                        viewConversation.set(conversations[id])}
                     >{conversations[id].title}</button
                 >
             </li>
