@@ -2,6 +2,7 @@
   import Conversation from "./lib/Conversation.svelte";
   import ConversationHistory from "./lib/ConversationHistory.svelte";
   import { viewConversation } from "./lib/state";
+
 </script>
 
 <main class="flex">

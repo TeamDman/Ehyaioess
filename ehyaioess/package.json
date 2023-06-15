@@ -11,7 +11,8 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.4.0"
+    "@tauri-apps/api": "^1.4.0",
+    "tauri-plugin-window-state-api": "github:tauri-apps/tauri-plugin-window-state#v1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
