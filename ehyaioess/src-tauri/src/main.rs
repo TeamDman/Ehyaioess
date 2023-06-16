@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod config;
+use chatgpt::prelude::ChatGPT;
 use config::Config;
 use models::ConversationManager;
 use std::time::{Duration, Instant};
@@ -29,7 +30,7 @@ fn main() {
     let conversation_manager =
         ConversationManager::from_disk(&config.conversation_history_save_path)
             .unwrap_or_else(|_| ConversationManager::new());
-        
+
     tauri::Builder::default()
         .manage(config)
         .manage(chatgpt)
@@ -37,10 +38,12 @@ fn main() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             commands::greet,
-            commands::list_conversations,
+            commands::list_conversation_titles,
+            commands::get_conversation,
             commands::new_conversation,
             commands::set_conversation_title,
-            commands::new_message,
+            commands::new_user_message,
+            commands::generate_assistant_message,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();

@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store';
-import type { ConversationModel } from './models';
+// import { writable, type Writable } from 'svelte/store';
+// import type { Conversation } from './models';
 
-export const viewConversation: Writable<null|ConversationModel> = writable(null);
+// export const viewConversation: Writable<null|Conversation> = writable(null);

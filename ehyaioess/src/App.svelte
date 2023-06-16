@@ -1,18 +1,17 @@
 <script lang="ts">
   import Conversation from "./lib/Conversation.svelte";
   import ConversationList from "./lib/ConversationList.svelte";
-    import NoConversationPlaceholder from "./lib/NoConversationPlaceholder.svelte";
-  import { viewConversation } from "./lib/state";
-
+  import NoConversationPlaceholder from "./lib/NoConversationPlaceholder.svelte";
+  let selectedConversationId: string | null = null;
 </script>
 
 <main class="flex h-screen overflow-hidden">
-  <ConversationList />
+  <ConversationList on:select={(e) => (selectedConversationId = e.detail)} />
   <div id="main-panel" class="flex-grow h-full overflow-auto">
-    {#if $viewConversation != null}
-      <Conversation/>
+    {#if selectedConversationId !== null}
+      <Conversation bind:conversationId={selectedConversationId} />
     {:else}
-      <NoConversationPlaceholder/>
+      <NoConversationPlaceholder />
     {/if}
   </div>
 </main>

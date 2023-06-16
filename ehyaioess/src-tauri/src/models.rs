@@ -12,6 +12,9 @@ pub enum MyError {
     EmitFail,
     ConversationWriteToDiskFail,
     NoConfigDirFail,
+    UserNotLatestAuthorInConversationFail,
+    ConversationEmptyFail,
+    ConversationAIResponseFail,
 }
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -21,6 +24,9 @@ impl fmt::Display for MyError {
             MyError::EmitFail => write!(f, "Failed to emit"),
             MyError::ConversationWriteToDiskFail => write!(f, "Failed to write conversation to disk"),
             MyError::NoConfigDirFail => write!(f, "Failed identifying config directory"),
+            MyError::UserNotLatestAuthorInConversationFail => write!(f, "User is not the latest author in the conversation"),
+            MyError::ConversationEmptyFail => write!(f, "Conversation is empty"),
+            MyError::ConversationAIResponseFail => write!(f, "Failed to get AI response"),
         }
     }
 }
@@ -28,6 +34,7 @@ impl std::error::Error for MyError {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConversationMessage {
+    pub conversation_id: uuid::Uuid,
     pub id: uuid::Uuid,
     pub author: chatgpt::types::Role,
     pub content: String,
@@ -47,7 +54,7 @@ impl Conversation {
             history: Vec::new(),
         }
     }
-    pub fn into_chatgpt_conversation(&self, client: ChatGPT) -> chatgpt::converse::Conversation {
+    pub fn into_chatgpt_conversation(&self, chatgpt: ChatGPT) -> chatgpt::converse::Conversation {
         let history: Vec<chatgpt::types::ChatMessage> = self
             .history
             .iter()
@@ -56,7 +63,7 @@ impl Conversation {
                 role: msg.author,
             })
             .collect();
-        chatgpt::converse::Conversation::new_with_history(client, history)
+        chatgpt::converse::Conversation::new_with_history(chatgpt, history)
     }
 }
 
