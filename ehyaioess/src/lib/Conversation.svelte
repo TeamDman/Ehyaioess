@@ -30,31 +30,45 @@
     }
 
     $: commitTitleChange($viewConversation.id, editingTitleValue);
+
+    let userInput = "";
+    async function submitMessage() {
+        if (userInput.trim() === "") return;
+        console.log("Submitting message", userInput);
+        await invoke("new_message", {
+            conversation_id: $viewConversation.id,
+            content: userInput,
+        });
+        userInput = "";
+    }
 </script>
 
 <div
     class="bg-gradient-to-r from-cyan-500 to-blue-500 text-white w-full h-full"
 >
-    {#if !editingTitle}
-        <button
-            class="hover:bg-gradient-to-r from-indigo-500"
-            on:click={() => (editingTitle = true)}
-        >
-            {$viewConversation.title}
-        </button>
-    {:else}
-        <form on:submit|preventDefault={()=>editingTitle=false}>
-            <label for="title">Title</label>
-            <input id="title"
-                use:init
-                type="text"
-                class="text-black"
-                bind:value={editingTitleValue}
-                on:blur={() => editingTitle = false}
-            />
-            <button class="invisible" type="submit">Save</button>
-        </form>
-    {/if}
+    <div class="text-center">
+        {#if !editingTitle}
+            <button
+                class="hover:bg-gradient-to-r from-indigo-500"
+                on:click={() => (editingTitle = true)}
+            >
+                {$viewConversation.title}
+            </button>
+        {:else}
+            <form on:submit|preventDefault={() => (editingTitle = false)}>
+                <label for="title">Title</label>
+                <input
+                    id="title"
+                    use:init
+                    type="text"
+                    class="text-black"
+                    bind:value={editingTitleValue}
+                    on:blur={() => (editingTitle = false)}
+                />
+                <button class="invisible" type="submit">Save</button>
+            </form>
+        {/if}
+    </div>
 
     <div>
         <ul>
@@ -62,5 +76,17 @@
                 <li>{message.author} - {message.content}</li>
             {/each}
         </ul>
+    </div>
+
+    <div>
+        <form class="row" on:submit|preventDefault={()=>submitMessage()}>
+            <input
+                class="text-black"
+                id="greet-input"
+                placeholder="Enter a name..."
+                bind:value={userInput}
+            />
+            <button type="submit">Greet</button>
+        </form>
     </div>
 </div>

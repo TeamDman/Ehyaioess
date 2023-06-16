@@ -1,9 +1,30 @@
+use core::fmt;
 use std::{collections::HashMap};
 
 use chatgpt::{prelude::ChatGPT, types::ChatMessage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum MyError {
+    UUIDParseFail,
+    FindByIDFail,
+    EmitFail,
+    ConversationWriteToDiskFail,
+    NoConfigDirFail,
+}
+impl fmt::Display for MyError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            MyError::UUIDParseFail => write!(f, "Failed to parse UUID"),
+            MyError::FindByIDFail => write!(f, "Failed to find by ID"),
+            MyError::EmitFail => write!(f, "Failed to emit"),
+            MyError::ConversationWriteToDiskFail => write!(f, "Failed to write conversation to disk"),
+            MyError::NoConfigDirFail => write!(f, "Failed identifying config directory"),
+        }
+    }
+}
+impl std::error::Error for MyError {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConversationMessage {
@@ -57,11 +78,17 @@ impl ConversationManager {
             conversations: HashMap::new(),
         }
     }
-    pub fn new_conversation(&mut self) -> &Conversation {
-        let conv = Conversation::new();
-        let id = conv.id;
-        self.conversations.insert(id, conv);
-        self.conversations.get(&id).unwrap()
+    pub fn from_disk (path: &str) -> Result<Self, std::io::Error> {
+        let file = std::fs::File::open(path)?;
+        let conversations: HashMap<Uuid, Conversation> = serde_json::from_reader(file)?;
+        Ok(Self {
+            conversations
+        })
+    }
+    pub fn write_to_disk(&self, path: &str) -> Result<(), std::io::Error> {
+        let file = std::fs::File::create(path)?;
+        serde_json::to_writer(file, &self.conversations)?;
+        Ok(())
     }
 }
 

@@ -3,17 +3,16 @@
 
 mod config;
 use config::Config;
-use models::{Conversation, ConversationManager};
-use uuid::Uuid;
-use std::{time::{Duration, Instant}, collections::HashMap};
-use tauri::{Manager, async_runtime::RwLock};
+use models::ConversationManager;
+use std::time::{Duration, Instant};
+use tauri::{async_runtime::RwLock, Manager};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 mod commands;
 mod models;
 
 fn main() {
-    let config = match Config::from_file("ehyaioess.conf.secret.json") {
+    let config = match Config::from_disk() {
         Ok(conf) => conf,
         Err(e) => {
             eprintln!("Failed to load configuration: {}", e);
@@ -27,7 +26,10 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let conversation_manager = ConversationManager::new();
+    let conversation_manager =
+        ConversationManager::from_disk(&config.conversation_history_save_path)
+            .unwrap_or_else(|_| ConversationManager::new());
+        
     tauri::Builder::default()
         .manage(config)
         .manage(chatgpt)
@@ -37,7 +39,8 @@ fn main() {
             commands::greet,
             commands::list_conversations,
             commands::new_conversation,
-            commands::set_conversation_title
+            commands::set_conversation_title,
+            commands::new_message,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();

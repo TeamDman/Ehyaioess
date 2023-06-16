@@ -4,7 +4,9 @@ use chatgpt::prelude::ChatGPT;
 use std::collections::HashMap;
 use tauri::{async_runtime::RwLock, Manager, State};
 
-use crate::models::{Conversation, ConversationManager, ConversationTitleChangedEvent};
+use crate::models::{
+    Conversation, ConversationManager, ConversationMessage, ConversationTitleChangedEvent, MyError,
+};
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn list_conversations(
@@ -16,40 +18,78 @@ pub async fn list_conversations(
 #[tauri::command(rename_all = "snake_case")]
 pub async fn new_conversation(
     conversation_manager: State<'_, RwLock<ConversationManager>>,
-) -> Result<Conversation, ()> {
+    config: State<'_, crate::config::Config>,
+) -> Result<Conversation, MyError> {
     let mut mgr = conversation_manager.write().await;
-    let conv = mgr.new_conversation();
-    Ok(conv.clone())
+    let conv = Conversation::new();
+
+    mgr.conversations.insert(conv.id, conv.clone());
+    mgr.write_to_disk(&config.conversation_history_save_path)
+        .map_err(|_| MyError::ConversationWriteToDiskFail)?;
+
+    Ok(conv)
 }
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn set_conversation_title(
     conversation_manager: State<'_, RwLock<ConversationManager>>,
+    config: State<'_, crate::config::Config>,
     app_handle: tauri::AppHandle,
     id: &str,
     new_title: &str,
-) -> Result<(), ()> {
-    let conversation_id = match uuid::Uuid::parse_str(id) {
-        Ok(id) => id,
-        Err(_) => return Err(()),
-    };
+) -> Result<(), MyError> {
+    let conversation_id = uuid::Uuid::parse_str(id).map_err(|_| MyError::UUIDParseFail)?;
     let mut mgr = conversation_manager.write().await;
-    let conv = match mgr.conversations.get_mut(&conversation_id) {
-        Some(conv) => conv,
-        None => return Err(()),
-    };
+    let conv = mgr
+        .conversations
+        .get_mut(&conversation_id)
+        .ok_or(MyError::FindByIDFail)?;
+    if conv.title == new_title {
+        return Ok(());
+    }
+
     conv.title = new_title.to_string();
-    match app_handle.emit_all(
-        "conversation_title_changed",
-        ConversationTitleChangedEvent {
-            conversation_id: conv.id.clone(),
-            new_title: conv.title.clone(),
-        },
-    ) {
-        Ok(_) => (),
-        Err(_) => return Err(()),
-    };
+    mgr.write_to_disk(&config.conversation_history_save_path)
+        .map_err(|_| MyError::ConversationWriteToDiskFail)?;
+
+    // Drop the lock before emitting events.
+    drop(mgr);
+
+    app_handle
+        .emit_all(
+            "conversation_title_changed",
+            ConversationTitleChangedEvent {
+                conversation_id,
+                new_title: new_title.to_string(),
+            },
+        )
+        .map_err(|_| MyError::EmitFail)?;
+
     Ok(())
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn new_message(
+    app_handle: tauri::AppHandle,
+    conversation_manager: State<'_, RwLock<ConversationManager>>,
+    conversation_id: &str,
+    content: &str,
+) -> Result<ConversationMessage, MyError> {
+    let mut mgr = conversation_manager.write().await;
+    let conv = mgr
+        .conversations
+        .get_mut(&uuid::Uuid::parse_str(conversation_id).unwrap())
+        .ok_or(MyError::UUIDParseFail)?;
+    conv.history.push(ConversationMessage {
+        id: uuid::Uuid::new_v4(),
+        author: chatgpt::types::Role::User,
+        content: content.to_string(),
+    });
+    let msg = conv.history.last().unwrap();
+    app_handle
+        .emit_all("conversation_message_added", msg.clone())
+        .map_err(|_| MyError::EmitFail)?;
+    Ok(msg.clone())
 }
 
 #[tauri::command]
