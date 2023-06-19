@@ -14,7 +14,7 @@
         await invoke("new_conversation");
     }
 
-    const unlisten = listen(
+    const unlisten1 = listen(
         "conversation_title_changed",
         (event: {
             payload: { conversation_id: string; new_title: string };
@@ -24,7 +24,19 @@
             conversationTitlesById = conversationTitlesById;
         }
     );
-    onDestroy(async () => (await unlisten)());
+    onDestroy(async () => (await unlisten1)());
+
+    const unlisten2 = listen(
+        "new_conversation",
+        (event: {
+            payload: { conversation_id: string; title: string };
+        }) => {
+            conversationTitlesById[event.payload.conversation_id] =
+                event.payload.title;
+            conversationTitlesById = conversationTitlesById;
+        }
+    );
+    onDestroy(async () => (await unlisten2)());
 
     const dispatch = createEventDispatcher();
     function selectConversation(id: string) {

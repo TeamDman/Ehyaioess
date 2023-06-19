@@ -75,6 +75,12 @@ pub struct ConversationTitleChangedEvent {
     pub new_title: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConversationAddedEvent {
+    pub conversation_id: uuid::Uuid,
+    pub title: String,
+}
+
 
 pub struct ConversationManager {
     pub conversations: HashMap<Uuid, Conversation>,

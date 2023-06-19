@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use tauri::{async_runtime::RwLock, Manager, State};
 
 use crate::models::{
-    Conversation, ConversationManager, ConversationMessage, ConversationTitleChangedEvent, MyError,
+    Conversation, ConversationManager, ConversationMessage, ConversationTitleChangedEvent, MyError, ConversationAddedEvent,
 };
 
 #[tauri::command(rename_all = "snake_case")]
@@ -40,6 +40,7 @@ pub async fn get_conversation(
 pub async fn new_conversation(
     conversation_manager: State<'_, RwLock<ConversationManager>>,
     config: State<'_, crate::config::Config>,
+    app_handle: tauri::AppHandle,
 ) -> Result<Conversation, MyError> {
     let mut mgr = conversation_manager.write().await;
     let conv = Conversation::new();
@@ -48,6 +49,18 @@ pub async fn new_conversation(
     mgr.write_to_disk(&config.conversation_history_save_path)
         .map_err(|_| MyError::ConversationWriteToDiskFail)?;
 
+    // Drop the lock before emitting events.
+    drop(mgr);
+
+    app_handle
+        .emit_all(
+            "new_conversation",
+            ConversationAddedEvent {
+                conversation_id: conv.id,
+                title: conv.title.clone(),
+            },
+        )
+        .map_err(|_| MyError::EmitFail)?;
     Ok(conv)
 }
 
