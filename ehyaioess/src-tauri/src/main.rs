@@ -2,7 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod config;
-use chatgpt::prelude::ChatGPT;
 use config::Config;
 use models::ConversationManager;
 use std::time::{Duration, Instant};
@@ -11,6 +10,7 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 mod commands;
 mod models;
+mod payloads;
 
 fn main() {
     let config = match Config::from_disk() {
@@ -37,9 +37,9 @@ fn main() {
         .manage(RwLock::new(conversation_manager))
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-            commands::greet,
             commands::list_conversation_titles,
-            commands::get_conversation,
+            commands::get_conversation_messages,
+            commands::get_conversation_title,
             commands::new_conversation,
             commands::set_conversation_title,
             commands::new_user_message,
