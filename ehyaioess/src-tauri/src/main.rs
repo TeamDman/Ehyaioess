@@ -40,6 +40,7 @@ fn main() {
             commands::list_conversation_titles,
             commands::get_conversation_messages,
             commands::get_conversation_title,
+            commands::get_conversation,
             commands::new_conversation,
             commands::set_conversation_title,
             commands::new_user_message,

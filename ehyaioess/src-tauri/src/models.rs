@@ -104,7 +104,12 @@ impl Conversation {
     pub fn get_latest_event<T: 'static>(&self) -> Option<&ConversationEventRecord> {
         self.history
             .iter()
-            .filter(|record| Any::type_id(&record.event as &dyn Any) == TypeId::of::<T>())
+            // .filter(|record| Any::type_id(&record.event as &dyn Any) == TypeId::of::<T>())
+            .filter(|record| match record.event {
+                ConversationEvent::TitleChange(_) => TypeId::of::<T>() == TypeId::of::<ConversationTitleChangedEvent>(),
+                ConversationEvent::MessageAdded(_) => TypeId::of::<T>() == TypeId::of::<ConversationMessageAddedEvent>(),
+                ConversationEvent::Created(_) => TypeId::of::<T>() == TypeId::of::<ConversationCreatedEvent>(),
+            })
             .max_by_key(|record| record.timestamp)
     }
     pub fn add_event<E: Into<ConversationEvent>>(&mut self, event: E) -> &ConversationEventRecord {
@@ -144,6 +149,29 @@ impl Conversation {
                 }
             })
             .unwrap_or_else(|| Cow::Owned(DEFAULT_CONVERSATION_TITLE.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_get_title() {
+        let mut conv = Conversation::new();
+        assert_eq!(
+            conv.get_title().as_ref(),
+            DEFAULT_CONVERSATION_TITLE
+        );
+        let latest = conv.add_event(ConversationTitleChangedEvent {
+            new_title: "New Title".to_string(),
+        }).id;
+        assert_eq!(conv.get_latest_event::<ConversationTitleChangedEvent>().unwrap().id, latest);
+        assert_eq!(conv.get_title().as_ref(), "New Title");
+        conv.add_event(ConversationTitleChangedEvent {
+            new_title: "Newer Title".to_string(),
+        });
+        assert_eq!(conv.get_title().as_ref(), "Newer Title");
     }
 }
 

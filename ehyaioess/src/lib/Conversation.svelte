@@ -13,9 +13,15 @@
     let isEditingTitle = false;
     let editingTitleValue = "";
     $: if (conversationId) {
+        invoke("get_conversation", {
+            conversation_id: conversationId,
+        }).then((data: any) => {
+            console.log("got conversation debug info", data);
+        });
         invoke("get_conversation_title", {
             conversation_id: conversationId,
         }).then((data: string) => {
+            console.log("got title", data);
             conversationTitle = data;
             editingTitleValue = data;
         });

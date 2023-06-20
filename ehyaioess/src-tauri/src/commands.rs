@@ -30,6 +30,21 @@ pub async fn list_conversation_titles(
 }
 
 #[tauri::command(rename_all = "snake_case")]
+pub async fn get_conversation(
+    conversation_manager: State<'_, RwLock<ConversationManager>>,
+    conversation_id: &str,
+) -> Result<Conversation, MyError> {
+    let conversation_id =
+        uuid::Uuid::parse_str(conversation_id).map_err(|_| MyError::FindByIDFail)?;
+    let mgr = conversation_manager.read().await;
+    let conversation = mgr
+        .conversations
+        .get(&conversation_id)
+        .ok_or(MyError::FindByIDFail)?;
+    Ok(conversation.clone())
+}
+
+#[tauri::command(rename_all = "snake_case")]
 pub async fn get_conversation_title(
     conversation_manager: State<'_, RwLock<ConversationManager>>,
     conversation_id: &str,
