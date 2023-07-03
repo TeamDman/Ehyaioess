@@ -18,6 +18,8 @@ use crate::{
 
 #[cfg(test)]
 mod test {
+    
+    
     fn rust_type_to_ts(rust_type: &syn::Type) -> String {
         match rust_type {
             syn::Type::Path(type_path) if type_path.qself.is_none() => {
@@ -28,13 +30,9 @@ mod test {
                     "Result" => {
                         match &type_path.path.segments.last().unwrap().arguments {
                             syn::PathArguments::AngleBracketed(angle_bracketed_data) => {
-                                if let Some(syn::GenericArgument::Type(ty)) = angle_bracketed_data.args.first() {
-                                    let inner_ts = rust_type_to_ts(ty);
-                                    if inner_ts == "void" {
-                                        "Promise<void>".to_owned()
-                                    } else {
-                                        format!("Promise<{}>", inner_ts)
-                                    }
+                                let args: Vec<_> = angle_bracketed_data.args.iter().collect();
+                                if let syn::GenericArgument::Type(ty) = args[0] {
+                                    rust_type_to_ts(ty)
                                 } else {
                                     panic!("Result without inner type")
                                 }
@@ -49,6 +47,23 @@ mod test {
                                     format!("Array<{}>", rust_type_to_ts(ty))
                                 } else {
                                     panic!("Vec without inner type")
+                                }
+                            },
+                            _ => panic!("Unsupported angle type: {}", ident.to_string()),
+                        }
+                    },
+                    "HashMap" => {
+                        match &type_path.path.segments.last().unwrap().arguments {
+                            syn::PathArguments::AngleBracketed(angle_bracketed_data) => {
+                                let args: Vec<_> = angle_bracketed_data.args.iter().collect();
+                                if let syn::GenericArgument::Type(key_ty) = args[0] {
+                                    if let syn::GenericArgument::Type(value_ty) = args[1] {
+                                        format!("Record<{}, {}>", rust_type_to_ts(key_ty), rust_type_to_ts(value_ty))
+                                    } else {
+                                        panic!("HashMap without value type")
+                                    }
+                                } else {
+                                    panic!("HashMap without key type")
                                 }
                             },
                             _ => panic!("Unsupported angle type: {}", ident.to_string()),
@@ -75,7 +90,6 @@ mod test {
         }
     }
     
-
 
     #[test]
     fn list_commands() {
