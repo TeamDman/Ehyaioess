@@ -23,6 +23,10 @@ tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-works
 chrono = "0.4.26"
 ts-rs = { version = "6.2.1", features = ["uuid-impl"] }
 
+[dev-dependencies]
+quote = "1.0.29"
+syn = { version = "2.0.23", features = ["full"] }
+
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use ts_rs::TS;
 
 
+
 #[derive(Debug, TS, Serialize, Deserialize, Clone)]
 #[ts(export, export_to = "../src/lib/bindings/")]
 pub struct ConversationTitleChangedEventPayload {

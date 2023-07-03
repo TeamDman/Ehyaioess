@@ -35,9 +35,7 @@
 
     const unlisten1 = listen(
         "conversation_title_changed",
-        (event: {
-            payload: ConversationTitleChangedEventPayload;
-        }) => {
+        (event: { payload: ConversationTitleChangedEventPayload }) => {
             console.log("title change", event);
             if (event.payload.conversation_id === conversationId)
                 conversationTitle = event.payload.new_title;
@@ -46,9 +44,7 @@
     onDestroy(async () => (await unlisten1)());
     const unlisten2 = listen(
         "conversation_message_added",
-        (event: {
-            payload: ConversationMessageAddedEventPayload;
-        }) => {
+        (event: { payload: ConversationMessageAddedEventPayload }) => {
             if (event.payload.conversation_id === conversationId) {
                 console.log("msg added", event);
                 conversationMessages.push(event.payload);
@@ -81,15 +77,27 @@
     $: if (messageListElem && conversationMessages.length > 0) {
         console.log("ticking", messageListElem);
         tick().then(() => {
-            messageListElem.lastElementChild.scrollIntoView({
-                behavior: "smooth",
-            });
+            // messageListElem.lastElementChild.scrollIntoView({
+            //     behavior: "smooth",
+            // });
         });
     }
 </script>
 
 <div
-    class="flex flex-col justify-center items-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500 text-white w-full"
+    class="
+        flex
+        flex-col
+        justify-center
+        items-center
+        w-full
+        h-full
+        overflow-auto
+        bg-gradient-to-r
+        from-cyan-500
+        to-blue-500
+        text-white
+    "
 >
     <div class="flex justify-center items-center w-full py-5">
         {#if !isEditingTitle}
@@ -127,10 +135,7 @@
         <ul bind:this={messageListElem}>
             {#each conversationMessages as message}
                 <li class="my-2 flex flex-col mr-1">
-                    <p
-                        class="px-3"
-                        class:self-end={message.author === "user"}
-                    >
+                    <p class="px-3" class:self-end={message.author === "user"}>
                         {message.author}
                     </p>
                     <div

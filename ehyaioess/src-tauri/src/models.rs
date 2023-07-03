@@ -1,6 +1,6 @@
 use core::fmt;
 use std::{
-    any::{Any, TypeId},
+    any::{TypeId},
     collections::HashMap, borrow::Cow,
 };
 
@@ -18,6 +18,7 @@ pub enum MyError {
     UserNotLatestAuthorInConversationFail,
     ConversationEmptyFail,
     ConversationAIResponseFail,
+    DirListFail,
 }
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -34,6 +35,7 @@ impl fmt::Display for MyError {
             }
             MyError::ConversationEmptyFail => write!(f, "Conversation is empty"),
             MyError::ConversationAIResponseFail => write!(f, "Failed to get AI response"),
+            MyError::DirListFail => write!(f, "Failed to list directory"),
         }
     }
 }

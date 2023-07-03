@@ -43,8 +43,8 @@ fn main() {
             commands::get_conversation,
             commands::new_conversation,
             commands::set_conversation_title,
-            commands::new_user_message,
-            commands::generate_assistant_message,
+            commands::new_conversation_user_message,
+            commands::new_conversation_assistant_message,
         ])
         .setup(|app| {
             let window = app.get_window("main").unwrap();
