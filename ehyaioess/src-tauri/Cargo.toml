@@ -26,6 +26,8 @@ ts-rs = { version = "6.2.1", features = ["uuid-impl"] }
 [dev-dependencies]
 quote = "1.0.29"
 syn = { version = "2.0.23", features = ["full"] }
+indoc = "1.0.3"
+
 
 
 [features]
