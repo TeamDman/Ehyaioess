@@ -2,19 +2,23 @@
   import TabLayout from "./lib/TabLayout.svelte";
   import FilePicker from "./lib/FilePicker.svelte";
   import ConversationPanel from "./lib/ConversationPanel.svelte";
+    import FlexTest from "./lib/FlexTest.svelte";
 </script>
 
-<main class="flex h-screen overflow-hidden">
-  <TabLayout
-    tabs={[
-      {
-        name: "Conversations",
-        component: ConversationPanel,
-      },
-      {
-        name: "Settings",
-        component: FilePicker,
-      },
-    ]}
-  />
-</main>
+<TabLayout
+  tabs={[
+    {
+      name: "Conversations",
+      component: ConversationPanel,
+    },
+    {
+      name: "Settings",
+      component: FilePicker,
+    },
+    {
+      name:"FlexTest",
+      component: FlexTest,
+    }
+  ]}
+  initial={2}
+/>

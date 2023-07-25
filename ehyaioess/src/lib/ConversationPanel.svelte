@@ -7,13 +7,11 @@
     let selectedConversationId: string | null = null;
 </script>
 
-<div class="flex flex-row bg-purple-200 h-full w-full">
+<div id="conversation-panel" class="flex h-full bg-purple-200">
     <ConversationList on:select={(e) => (selectedConversationId = e.detail)} />
-    <div id="main-panel" class="grow">
-        {#if selectedConversationId !== null}
-            <Conversation bind:conversationId={selectedConversationId} />
-        {:else}
-            <NoConversationPlaceholder />
-        {/if}
-    </div>
+    {#if selectedConversationId !== null}
+        <Conversation bind:conversationId={selectedConversationId} />
+    {:else}
+        <NoConversationPlaceholder />
+    {/if}
 </div>

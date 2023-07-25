@@ -6,15 +6,16 @@
   }
 
   export let tabs: Tab[] = [];
-  let activeTab = 0;
+  export let initial: number;
+  let activeTab = initial;
 
   function setActiveTab(index: number) {
     activeTab = index;
   }
 </script>
 
-<div class="flex flex-col w-full h-full bg-red-400">
-  <div>
+<div id="tab-layout" class="flex flex-col h-screen bg-red-400 overflow-hidden">
+  <div class="flex-shrink-0">
     {#each tabs as tab, index}
       <button
         class={index === activeTab ? 'active' : ''}
@@ -24,7 +25,7 @@
       </button>
     {/each}
   </div>
-  <div class="grow bg-orange-900">
+  <div class="flex-grow bg-orange-900 overflow-auto">
     {#each tabs as tab, index}
       {#if index === activeTab}
         <svelte:component this={tab.component} />

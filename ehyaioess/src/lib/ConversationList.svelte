@@ -49,6 +49,7 @@
 </script>
 
 <nav
+    id="conversation-list"
     class="flex flex-col justify-between w-40 h-full bg-gradient-to-r from-slate-800 to-blue-800"
 >
     <p class="text-white text-lg font-bold mb-4 p-4">

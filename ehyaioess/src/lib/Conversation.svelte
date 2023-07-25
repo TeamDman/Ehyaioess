@@ -5,7 +5,7 @@
 
     export let conversationId: string;
     let conversationTitle = "Loading...";
-    let conversationMessages: bindings.ConversationMessagePayload[] = [];
+    let conversationMessages: bindings.ConversationMessageAddedEvent[] = [];
 
     let isEditingTitle = false;
     let editingTitleValue = "";
@@ -18,10 +18,12 @@
             conversationTitle = data;
             editingTitleValue = data;
         });
-        bindings.getConversationMessages(conversationId).then((data: bindings.ConversationMessagePayload[]) => {
-            console.log("got msgs", data);
-            conversationMessages = data;
-        });
+        bindings
+            .getConversationMessages(conversationId)
+            .then((data: bindings.ConversationMessageAddedEvent[]) => {
+                console.log("got msgs", data);
+                conversationMessages = data;
+            });
     }
 
     const unlisten1 = listen(
@@ -71,14 +73,12 @@
 </script>
 
 <div
+    id="conversation"
     class="
         flex
         flex-col
-        justify-center
-        items-center
-        w-full
-        h-full
-        overflow-auto
+        flex-1
+        overflow-hidden
         bg-gradient-to-r
         from-cyan-500
         to-blue-500
@@ -97,10 +97,10 @@
             <form
                 class="flex flex-col space-y-3"
                 on:submit|preventDefault={() =>
-                    invoke("set_conversation_title", {
-                        conversation_id: conversationId,
-                        new_title: editingTitleValue,
-                    })}
+                    bindings.setConversationTitle(
+                        conversationId,
+                        editingTitleValue
+                    )}
             >
                 <label class="font-semibold" for="title">Title</label>
                 <input
