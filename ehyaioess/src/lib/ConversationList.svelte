@@ -1,17 +1,19 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
     import { listen } from "@tauri-apps/api/event";
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy } from "svelte";
+    import * as bindings from "./bindings";
 
     let conversationTitlesById: Record<string, string> = {};
-    invoke("list_conversation_titles").then(
+
+
+    bindings.listConversationTitles().then(
         (data: typeof conversationTitlesById) => {
             conversationTitlesById = data;
         }
     );
 
     async function newConversation() {
-        await invoke("new_conversation");
+        await bindings.newConversation();
     }
 
     const unlisten1 = listen(

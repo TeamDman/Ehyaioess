@@ -1,33 +1,24 @@
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api/tauri";
     import { listen } from "@tauri-apps/api/event";
     import { onDestroy, tick } from "svelte";
-    import type { ConversationMessagePayload } from "./bindings/ConversationMessagePayload";
-    import type { ConversationMessageAddedEventPayload } from "./bindings/ConversationMessageAddedEventPayload";
-    import type { ConversationTitleChangedEventPayload } from "./bindings/ConversationTitleChangedEventPayload";
+    import * as bindings from "./bindings";
 
     export let conversationId: string;
     let conversationTitle = "Loading...";
-    let conversationMessages: ConversationMessagePayload[] = [];
+    let conversationMessages: bindings.ConversationMessagePayload[] = [];
 
     let isEditingTitle = false;
     let editingTitleValue = "";
     $: if (conversationId) {
-        invoke("get_conversation", {
-            conversation_id: conversationId,
-        }).then((data: any) => {
+        bindings.getConversation(conversationId).then((data: any) => {
             console.log("got conversation debug info", data);
         });
-        invoke("get_conversation_title", {
-            conversation_id: conversationId,
-        }).then((data: string) => {
+        bindings.getConversationTitle(conversationId).then((data: string) => {
             console.log("got title", data);
             conversationTitle = data;
             editingTitleValue = data;
         });
-        invoke("get_conversation_messages", {
-            conversation_id: conversationId,
-        }).then((data: ConversationMessagePayload[]) => {
+        bindings.getConversationMessages(conversationId).then((data: bindings.ConversationMessagePayload[]) => {
             console.log("got msgs", data);
             conversationMessages = data;
         });
@@ -35,7 +26,7 @@
 
     const unlisten1 = listen(
         "conversation_title_changed",
-        (event: { payload: ConversationTitleChangedEventPayload }) => {
+        (event: { payload: bindings.ConversationTitleChangedEventPayload }) => {
             console.log("title change", event);
             if (event.payload.conversation_id === conversationId)
                 conversationTitle = event.payload.new_title;
@@ -44,7 +35,7 @@
     onDestroy(async () => (await unlisten1)());
     const unlisten2 = listen(
         "conversation_message_added",
-        (event: { payload: ConversationMessageAddedEventPayload }) => {
+        (event: { payload: bindings.ConversationMessageAddedEventPayload }) => {
             if (event.payload.conversation_id === conversationId) {
                 console.log("msg added", event);
                 conversationMessages.push(event.payload);
@@ -62,14 +53,9 @@
     async function submitMessage() {
         if (userInput.trim() === "") return;
         console.log("Submitting message", userInput);
-        await invoke("new_user_message", {
-            conversation_id: conversationId,
-            content: userInput,
-        });
+        await bindings.newConversationUserMessage(conversationId, userInput);
         userInput = "";
-        await invoke("generate_assistant_message", {
-            conversation_id: conversationId,
-        });
+        await bindings.newConversationAssistantMessage(conversationId);
     }
 
     let messageListElem;
@@ -135,12 +121,12 @@
         <ul bind:this={messageListElem}>
             {#each conversationMessages as message}
                 <li class="my-2 flex flex-col mr-1">
-                    <p class="px-3" class:self-end={message.author === "user"}>
+                    <p class="px-3" class:self-end={message.author === "User"}>
                         {message.author}
                     </p>
                     <div
                         class="max-w-md font-semibold bg-gradient-to-tr from-orange-500 to-purple-700 rounded-xl p-2"
-                        class:self-end={message.author === "user"}
+                        class:self-end={message.author === "User"}
                     >
                         {message.content}
                     </div>

@@ -1,14 +1,16 @@
 use core::fmt;
 use std::{
-    any::{TypeId},
+    any::TypeId,
     collections::HashMap, borrow::Cow,
 };
 
 use chatgpt::{prelude::ChatGPT, types::ChatMessage};
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use serde::de::Error;
 use uuid::Uuid;
+use specta::Type;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub enum MyError {
     UUIDParseFail,
     FindByIDFail,
@@ -41,25 +43,49 @@ impl fmt::Display for MyError {
 }
 impl std::error::Error for MyError {}
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize, Eq, Ord, Type)]
+pub enum ChatRole {
+    System,
+    Assistant,
+    User
+}
+
+impl From<chatgpt::types::Role> for ChatRole {
+    fn from(role: chatgpt::types::Role) -> Self {
+        match role {
+            chatgpt::types::Role::System => ChatRole::System,
+            chatgpt::types::Role::Assistant => ChatRole::Assistant,
+            chatgpt::types::Role::User => ChatRole::User,
+        }
+    }
+}
+
+impl From<ChatRole> for chatgpt::types::Role {
+    fn from(chat_role: ChatRole) -> Self {
+        match chat_role {
+            ChatRole::System => chatgpt::types::Role::System,
+            ChatRole::Assistant => chatgpt::types::Role::Assistant,
+            ChatRole::User => chatgpt::types::Role::User,
+        }
+    }
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct ConversationMessageAddedEvent {
-    pub author: chatgpt::types::Role,
+    pub author: ChatRole,
     pub content: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct ConversationTitleChangedEvent {
     pub new_title: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ConversationCreatedEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub enum ConversationEvent {
     MessageAdded(ConversationMessageAddedEvent),
     TitleChange(ConversationTitleChangedEvent),
-    Created(ConversationCreatedEvent),
 }
 impl From<ConversationMessageAddedEvent> for ConversationEvent {
     fn from(event: ConversationMessageAddedEvent) -> Self {
@@ -73,21 +99,34 @@ impl From<ConversationTitleChangedEvent> for ConversationEvent {
     }
 }
 
-impl From<ConversationCreatedEvent> for ConversationEvent {
-    fn from(_: ConversationCreatedEvent) -> Self {
-        ConversationEvent::Created(ConversationCreatedEvent {})
-    }
+
+
+
+fn serialize_timestamp<S>(timestamp: &i64, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let timestamp_str = timestamp.to_string();
+    serializer.serialize_str(&timestamp_str)
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+fn deserialize_timestamp<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    s.parse::<i64>().map_err(Error::custom)
+}
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct ConversationEventRecord {
     pub id: uuid::Uuid,
     pub conversation_id: Uuid,
+    #[serde(serialize_with = "serialize_timestamp", deserialize_with = "deserialize_timestamp")]
     pub timestamp: i64,
     pub event: ConversationEvent,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct Conversation {
     pub id: uuid::Uuid,
     pub history: Vec<ConversationEventRecord>,
@@ -96,11 +135,10 @@ pub struct Conversation {
 const DEFAULT_CONVERSATION_TITLE: &str = "Untitled Conversation";
 impl Conversation {
     pub fn new() -> Self {
-        let mut conv = Self {
+        let conv = Self {
             id: uuid::Uuid::new_v4(),
             history: Vec::new(),
         };
-        conv.add_event(ConversationCreatedEvent {});
         conv
     }
     pub fn get_latest_event<T: 'static>(&self) -> Option<&ConversationEventRecord> {
@@ -110,7 +148,6 @@ impl Conversation {
             .filter(|record| match record.event {
                 ConversationEvent::TitleChange(_) => TypeId::of::<T>() == TypeId::of::<ConversationTitleChangedEvent>(),
                 ConversationEvent::MessageAdded(_) => TypeId::of::<T>() == TypeId::of::<ConversationMessageAddedEvent>(),
-                ConversationEvent::Created(_) => TypeId::of::<T>() == TypeId::of::<ConversationCreatedEvent>(),
             })
             .max_by_key(|record| record.timestamp)
     }
@@ -118,7 +155,7 @@ impl Conversation {
         let record = ConversationEventRecord {
             id: uuid::Uuid::new_v4(),
             conversation_id: self.id,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: chrono::Utc::now().timestamp_millis(),
             event: event.into(),
         };
         self.history.push(record);
@@ -132,7 +169,7 @@ impl Conversation {
                 if let ConversationEvent::MessageAdded(msg) = &record.event {
                     Some(ChatMessage {
                         content: msg.content.clone(),
-                        role: msg.author,
+                        role: msg.author.into(),
                     })
                 } else {
                     None
