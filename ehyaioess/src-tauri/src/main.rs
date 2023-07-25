@@ -8,7 +8,6 @@ use std::time::{Duration, Instant};
 use tauri::{async_runtime::RwLock, Manager};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
-
 mod commands;
 mod models;
 mod events;
@@ -31,7 +30,7 @@ fn main() {
     let conversation_manager =
         ConversationManager::from_disk(&config.conversation_history_save_path)
             .unwrap_or_else(|_| ConversationManager::new());
-        
+
     tauri::Builder::default()
         .manage(config)
         .manage(chatgpt)

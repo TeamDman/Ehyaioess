@@ -15,7 +15,7 @@ export function listConversationTitles() {
 }
 
 export function getConversationMessages(conversationId: string) {
-    return invoke()<ConversationMessagePayload[]>("get_conversation_messages", { conversationId })
+    return invoke()<ConversationMessageAddedEvent[]>("get_conversation_messages", { conversationId })
 }
 
 export function getConversationTitle(conversationId: string) {
@@ -52,10 +52,10 @@ export function wrapEventPayloads(bruh: WrapType) {
 
 export type Conversation = { id: string; history: ConversationEventRecord[] }
 export type ChatRole = "System" | "Assistant" | "User"
+export type WrapType = "None" | { ConversationTitleChangedEventPayload: ConversationTitleChangedEventPayload } | { ConversationMessageAddedEventPayload: ConversationMessageAddedEventPayload }
 export type ConversationEvent = { MessageAdded: ConversationMessageAddedEvent } | { TitleChange: ConversationTitleChangedEvent }
-export type WrapType = "None" | { ConversationTitleChangedEventPayload: ConversationTitleChangedEventPayload } | { ConversationMessagePayload: ConversationMessagePayload }
 export type ConversationTitleChangedEventPayload = { conversation_id: string; new_title: string }
+export type ConversationMessageAddedEventPayload = { conversation_id: string; author: ChatRole; content: string }
 export type ConversationEventRecord = { id: string; conversation_id: string; timestamp: string; event: ConversationEvent }
-export type ConversationMessagePayload = { author: ChatRole; content: string }
 export type ConversationMessageAddedEvent = { author: ChatRole; content: string }
 export type ConversationTitleChangedEvent = { new_title: string }

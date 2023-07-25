@@ -11,7 +11,7 @@ use crate::{
         ConversationTitleChangedEvent, MyError,
     },
     events::{
-        ConversationMessageAddedEventPayload, ConversationMessagePayload,
+        ConversationMessageAddedEventPayload,
         ConversationTitleChangedEventPayload,
     },
 };
@@ -67,7 +67,7 @@ pub async fn get_conversation_title(
 pub async fn get_conversation_messages(
     conversation_manager: State<'_, RwLock<ConversationManager>>,
     conversation_id: &str,
-) -> Result<Vec<ConversationMessagePayload>, MyError> {
+) -> Result<Vec<ConversationMessageAddedEvent>, MyError> {
     let conversation_id =
         uuid::Uuid::parse_str(conversation_id).map_err(|_| MyError::FindByIDFail)?;
     let mgr = conversation_manager.read().await;
@@ -80,10 +80,7 @@ pub async fn get_conversation_messages(
         .iter()
         .filter_map(|record| {
             if let ConversationEvent::MessageAdded(msg) = &record.event {
-                Some(ConversationMessagePayload {
-                    author: msg.author,
-                    content: msg.content.clone(),
-                })
+                Some(msg.clone())
             } else {
                 None
             }
